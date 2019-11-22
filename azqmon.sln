@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "azqmon", "azqmon.csproj", "{FA9D2556-EB87-4476-BEBD-8B284A68C0E9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FA9D2556-EB87-4476-BEBD-8B284A68C0E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA9D2556-EB87-4476-BEBD-8B284A68C0E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA9D2556-EB87-4476-BEBD-8B284A68C0E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA9D2556-EB87-4476-BEBD-8B284A68C0E9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E94C9832-CBD3-44FC-B77E-C4D47FAC070F}
+	EndGlobalSection
+EndGlobal

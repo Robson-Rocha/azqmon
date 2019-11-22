@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <RootNamespace>monitor_queues</RootNamespace>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>azqmon</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <ApplicationIcon>images\app.ico</ApplicationIcon>
+
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Robson-Rocha/azqmon</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Robson-Rocha/azqmon</RepositoryUrl>
+    <Authors>Robson Rocha de Araújo</Authors>
+    <Copyright>Copyright ©2019 Robson Rocha de Araújo</Copyright>
+    <Description>Azure Storage Queues monitoring utility</Description>
+    <PackageIcon>nuget.png</PackageIcon>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.0</Version>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="images\nuget.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="local.json" />
+    <None Remove="prod.json" />
+    <None Remove="qa.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.4.4" />
+    <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.1.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.1" />
+    <PackageReference Include="Xutils.ConsoleApp" Version="1.0.6" />
+    <PackageReference Include="Xutils.ValidationAttributes" Version="1.0.3" />
+  </ItemGroup>
+
+</Project>
