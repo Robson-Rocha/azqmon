@@ -18,9 +18,9 @@
     <Copyright>Copyright ©2019 Robson Rocha de Araújo</Copyright>
     <Description>Azure Storage Queues monitoring utility</Description>
     <PackageIcon>nuget.png</PackageIcon>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.0.1</Version>
 
   </PropertyGroup>
 

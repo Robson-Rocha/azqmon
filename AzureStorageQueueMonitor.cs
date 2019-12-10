@@ -132,7 +132,10 @@ namespace monitor_queues
                 {
                     for (int i = queueInfos.Count, l = previousCount + 2; i < l; i++)
                     {
-                        _console.ColoredWriteLine(CLEAR, new string(' ', Console.BufferWidth - 1));
+                        Console.BackgroundColor = ConsoleColor.Black;
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.WriteLine(new string(' ', Console.BufferWidth - 1));
+                        //_console.ColoredWriteLine(CLEAR, new string('.', Console.BufferWidth - 1));
                     }
                 }
                 Console.SetCursorPosition(0, 0);
