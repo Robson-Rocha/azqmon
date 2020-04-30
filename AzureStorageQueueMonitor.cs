@@ -3,7 +3,10 @@ using Microsoft.Azure.Storage.Queue;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Xutils.ConsoleApp;
@@ -14,15 +17,14 @@ namespace monitor_queues
     {
         private readonly IColoredConsole _console;
 
-        private const string colunas = "{0,60} {1,10} {2,7} {3,10} {4,14}";
-        private readonly string DARKRED_WHITE = $"<background c=\"DarkRed\"><foreground c=\"White\">{colunas}</foreground></background>";
-        private readonly string DARKGREEN_WHITE = $"<background c=\"DarkGreen\"><foreground c=\"White\">{colunas}</foreground></background>";
-        private readonly string BLACK_RED = $"<background c=\"Black\"><foreground c=\"Red\">{colunas}</foreground></background>";
-        private readonly string BLACK_BLUE = $"<background c=\"Black\"><foreground c=\"Blue\">{colunas}</foreground></background>";
-        private readonly string BLACK_GREEN = $"<background c=\"Black\"><foreground c=\"Green\">{colunas}</foreground></background>";
-        private readonly string BLACK_GRAY = $"<background c=\"Black\"><foreground c=\"Gray\">{colunas}</foreground></background>";
-        private readonly string BLACK_WHITE = $"<background c=\"Black\"><foreground c=\"White\">{colunas}</foreground></background>";
-        private readonly string CLEAR = "<background c=\"Black\"><foreground c=\"Gray\">{0}</foreground></background>";
+        private const string columnSizes = "{0,58}  {1,8}  {2,6}  {3,14}  {4,15}";
+        private readonly string DARKRED_WHITE = $"<background c=\"DarkRed\"><foreground c=\"White\">{columnSizes}</foreground></background>";
+        private readonly string DARKGREEN_WHITE = $"<background c=\"DarkGreen\"><foreground c=\"White\">{columnSizes}</foreground></background>";
+        private readonly string BLACK_RED = $"<background c=\"Black\"><foreground c=\"Red\">{columnSizes}</foreground></background>";
+        private readonly string BLACK_BLUE = $"<background c=\"Black\"><foreground c=\"Blue\">{columnSizes}</foreground></background>";
+        private readonly string BLACK_GREEN = $"<background c=\"Black\"><foreground c=\"Green\">{columnSizes}</foreground></background>";
+        private readonly string BLACK_GRAY = $"<background c=\"Black\"><foreground c=\"Gray\">{columnSizes}</foreground></background>";
+        private readonly string BLACK_WHITE = $"<background c=\"Black\"><foreground c=\"White\">{columnSizes}</foreground></background>";
 
         public AzureStorageQueueMonitor(IColoredConsole console)
         {
@@ -31,7 +33,6 @@ namespace monitor_queues
 
         public async Task<bool> Start(ConfigurationOptions config, CancellationToken cancellationToken)
         {
-
             CloudStorageAccount storageAccount;
             try
             {
@@ -51,7 +52,6 @@ namespace monitor_queues
 
             CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
             int iterations = 0;
-            int previousCount = 0;
             Stopwatch sw = new Stopwatch();
             while (true)
             {
@@ -64,7 +64,6 @@ namespace monitor_queues
                 if (iterations == 50)
                 {
                     iterations = 0;
-                    previousCount = queueInfos.Count;
                     queueInfos.Clear();
                 }
                 List<CloudQueue> queues = queueClient.ListQueues().ToList();
@@ -72,11 +71,17 @@ namespace monitor_queues
                 {
                     queue.FetchAttributes();
                     string name = queue.Name;
+                    if (config.IgnoredQueues?.Any(i => Regex.IsMatch(name, i)) ?? false)
+                        continue;
+
                     int count = queue.ApproximateMessageCount ?? 0;
                     if (!queueInfos.ContainsKey(name))
                     {
-                        if (count > 0)
-                            queueInfos.Add(name, new QueueInfo { Name = name, FirstCount = count, CurrentCount = count });
+                        bool isImportant = false;
+                        if (config.ImportantQueues?.Any(i => Regex.IsMatch(name, i)) ?? false)
+                            isImportant = true;
+
+                        queueInfos.Add(name, new QueueInfo { Name = name, FirstCount = count, CurrentCount = count, IsImportant = isImportant });
                     }
                     else
                     {
@@ -94,56 +99,108 @@ namespace monitor_queues
                         info.CurrentCount = count;
                     }
                 }
-                Console.CursorVisible = false;
-                Console.SetCursorPosition(0, 0);
-                _console.ColoredWriteLine(BLACK_WHITE, "Queue", "Messages", "Msgs/s", "Elapsed", "Completion");
-                _console.ColoredWriteLine(BLACK_WHITE, new string('=', 5), new string('=', 8), new string('=', 6), new string('=', 7), new string('=', 10));
-
-                string colorPattern = "";
-                foreach (string queue in queueInfos.Keys.OrderBy(k => k))
-                {
-                    if (queueInfos[queue].Name.EndsWith("-poison") && queueInfos[queue].IncreasedCount)
-                    {
-                        colorPattern = DARKRED_WHITE;
-                    }
-                    else if (queueInfos[queue].Name.EndsWith("-poison") && queueInfos[queue].DecreasedCount)
-                    {
-                        colorPattern = DARKGREEN_WHITE;
-                    }
-                    else if (queueInfos[queue].Name.EndsWith("-poison"))
-                    {
-                        colorPattern = BLACK_RED;
-                    }
-                    else if (queueInfos[queue].IncreasedCount)
-                    {
-                        colorPattern = BLACK_BLUE;
-                    }
-                    else if (queueInfos[queue].DecreasedCount)
-                    {
-                        colorPattern = BLACK_GREEN;
-                    }
-                    else
-                    {
-                        colorPattern = BLACK_GRAY;
-                    }
-                    _console.ColoredWriteLine(colorPattern, queueInfos[queue].Name, queueInfos[queue].CurrentCount.ToString(), queueInfos[queue].Speed, queueInfos[queue].RemainingTime, queueInfos[queue].EstimatedConclusion);
-                }
-                if (iterations == 0)
-                {
-                    for (int i = queueInfos.Count, l = previousCount + 2; i < l; i++)
-                    {
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        Console.WriteLine(new string(' ', Console.BufferWidth - 1));
-                        //_console.ColoredWriteLine(CLEAR, new string('.', Console.BufferWidth - 1));
-                    }
-                }
-                Console.SetCursorPosition(0, 0);
+                PrintQueues(config, queueInfos, iterations);
+                if (config.ExportCountData)
+                    ExportCountData(config, queueInfos);
                 sw.Stop();
                 long sleepInterval = config.Interval - sw.ElapsedMilliseconds;
                 if (sleepInterval > 0)
                     await Task.Delay(config.Interval, cancellationToken);
             }
+        }
+
+        private string _exportFullPath;
+
+        private void ExportCountData(ConfigurationOptions config, Dictionary<string, QueueInfo> queueInfos)
+        {
+            if (_exportFullPath == null)
+            {
+                string exportPath;
+                if (string.IsNullOrWhiteSpace(config.ExportPath))
+                {
+                    exportPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                }
+                else
+                {
+                    exportPath = config.ExportPath;
+                }
+
+                _exportFullPath = Path.Combine(exportPath, $"azqmon_{DateTime.Now.ToString("yyyyMMddhhmmss")}.csv");
+            }
+
+            var sb = new StringBuilder();
+            var orderedQueueInfos = queueInfos.Values.Select(q => new { q.Name, q.CurrentCount })
+                                                     .OrderBy(q => q.Name)
+                                                     .ToArray();
+
+            if (!File.Exists(_exportFullPath))
+            {
+                sb.Append("Date");
+                foreach (var queueInfo in orderedQueueInfos)
+                {
+                    sb.Append($";{queueInfo.Name}");
+                }
+                sb.AppendLine();
+            }
+            sb.Append(DateTime.Now.ToString());
+            foreach (var queueInfo in orderedQueueInfos)
+            {
+                sb.Append($";{queueInfo.CurrentCount}");
+            }
+            sb.AppendLine();
+            File.AppendAllText(_exportFullPath, sb.ToString());
+        }
+
+        private void PrintQueues(ConfigurationOptions config, Dictionary<string, QueueInfo> queueInfos, int iterations)
+        {
+            Console.CursorVisible = false;
+            if (iterations == 0)
+            {
+                Console.Clear();
+            }
+
+            Console.SetCursorPosition(0, 0);
+            _console.ColoredWriteLine(BLACK_WHITE, "Queue", "Messages", "Msgs/s", "Remaining Time", "Est. Conclusion");
+            _console.ColoredWriteLine(BLACK_WHITE, new string('=', 5), new string('=', 8), new string('=', 6), new string('=', 14), new string('=', 15));
+
+            string colorPattern = "";
+
+            var filteredQueueInfos = !config.ShowEmptyQueues ? queueInfos.Where(q => q.Value.FirstCount != 0 || q.Value.CurrentCount != 0)
+                                                             : queueInfos;
+
+            var orderedQueueInfos = config.OrderByQueueSize ? filteredQueueInfos.OrderByDescending(q => q.Value.CurrentCount)
+                                                                                .ThenBy(q => q.Key)
+                                                            : filteredQueueInfos.OrderBy(q => q.Key);
+
+            foreach (string queue in orderedQueueInfos.Select(q => q.Key))
+            {
+                if (queueInfos[queue].IsImportant && queueInfos[queue].IncreasedCount)
+                {
+                    colorPattern = DARKRED_WHITE;
+                }
+                else if (queueInfos[queue].IsImportant && queueInfos[queue].DecreasedCount)
+                {
+                    colorPattern = DARKGREEN_WHITE;
+                }
+                else if (queueInfos[queue].IsImportant)
+                {
+                    colorPattern = BLACK_RED;
+                }
+                else if (queueInfos[queue].IncreasedCount)
+                {
+                    colorPattern = BLACK_BLUE;
+                }
+                else if (queueInfos[queue].DecreasedCount)
+                {
+                    colorPattern = BLACK_GREEN;
+                }
+                else
+                {
+                    colorPattern = BLACK_GRAY;
+                }
+                _console.ColoredWriteLine(colorPattern, queueInfos[queue].Name, queueInfos[queue].CurrentCount.ToString(), queueInfos[queue].Speed, queueInfos[queue].RemainingTime, queueInfos[queue].EstimatedConclusion);
+            }
+            Console.SetCursorPosition(0, 0);
         }
     }
 }
