@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>monitor_queues</RootNamespace>
 
     <PackAsTool>true</PackAsTool>
@@ -18,9 +18,9 @@
     <Copyright>Copyright ©2019 Robson Rocha de Araújo</Copyright>
     <Description>Azure Storage Queues monitoring utility</Description>
     <PackageIcon>nuget.png</PackageIcon>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
-    <Version>1.0.2</Version>
+    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <FileVersion>1.1.0</FileVersion>
+    <Version>1.1.0</Version>
 
   </PropertyGroup>
 

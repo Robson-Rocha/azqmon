@@ -4,6 +4,13 @@ using Xutils.ValidationAttributes;
 
 namespace monitor_queues
 {
+    public class GroupConfiguration
+    {
+        public string GroupName { get; set; }
+        public string[] Queues { get; set; }
+        public int Order { get; set; }
+    }
+
     public class ConfigurationOptions
     {
         private int _interval;
@@ -70,5 +77,9 @@ namespace monitor_queues
                 Description = "Optional. Indicates a queue name pattern (regex) to consider as important. Important queues are emphasized in exhibition.",
                 ShowInHelpText = true, ValueName = "Important queue name.")]
         public string[] ImportantQueues { get; set; }
+
+        public bool GroupQueues { get; set; }
+
+        public GroupConfiguration[] QueueGroups { get; set; }
     }
 }

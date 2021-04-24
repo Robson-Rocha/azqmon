@@ -64,5 +64,8 @@ namespace monitor_queues
         public bool IncreasedCount { get; set; }
         public bool DecreasedCount { get; set; }
         public bool IsImportant { get; set; }
+
+        public string GroupName { get; set; }
+        public int GroupOrder { get; set; }
     }
 }

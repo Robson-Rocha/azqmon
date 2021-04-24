@@ -31,6 +31,8 @@ namespace monitor_queues
             _console = console;
         }
 
+        private int _previousQueueCount = 0;
+
         public async Task<bool> Start(ConfigurationOptions config, CancellationToken cancellationToken)
         {
             CloudStorageAccount storageAccount;
@@ -69,7 +71,19 @@ namespace monitor_queues
                 List<CloudQueue> queues = queueClient.ListQueues().ToList();
                 foreach (var queue in queues)
                 {
-                    queue.FetchAttributes();
+                    try
+                    {
+                        queue.FetchAttributes();
+
+                    }
+                    catch (StorageException sex) when (sex.Message.Contains("The specified queue does not exist"))
+                    {
+                        if (queueInfos.ContainsKey(queue.Name))
+                        {
+                            queueInfos.Remove(queue.Name);
+                        }
+                    }                    
+                    
                     string name = queue.Name;
                     if (config.IgnoredQueues?.Any(i => Regex.IsMatch(name, i)) ?? false)
                         continue;
@@ -81,7 +95,29 @@ namespace monitor_queues
                         if (config.ImportantQueues?.Any(i => Regex.IsMatch(name, i)) ?? false)
                             isImportant = true;
 
-                        queueInfos.Add(name, new QueueInfo { Name = name, FirstCount = count, CurrentCount = count, IsImportant = isImportant });
+                        string groupName = "NOT GROUPED";
+                        int groupOrder = int.MaxValue;
+                        if (config.GroupQueues)
+                        {
+                            foreach (var queueGroup in config.QueueGroups)
+                            {
+                                if (queueGroup.Queues.Any(q => Regex.IsMatch(name, q)))
+                                {
+                                    groupName = queueGroup.GroupName;
+                                    groupOrder = queueGroup.Order;
+                                    continue;
+                                }
+                            }
+                        }
+
+                        queueInfos.Add(name, new QueueInfo { 
+                            Name = name, 
+                            FirstCount = count, 
+                            CurrentCount = count, 
+                            IsImportant = isImportant,
+                            GroupName = groupName,
+                            GroupOrder = groupOrder
+                        });
                     }
                     else
                     {
@@ -101,7 +137,14 @@ namespace monitor_queues
                 }
                 PrintQueues(config, queueInfos, iterations);
                 if (config.ExportCountData)
+                {
+                    if(_previousQueueCount != queueInfos.Count)
+                    {
+                        _exportFullPath = null;
+                    }
                     ExportCountData(config, queueInfos);
+                }
+                _previousQueueCount = queueInfos.Count;
                 sw.Stop();
                 long sleepInterval = config.Interval - sw.ElapsedMilliseconds;
                 if (sleepInterval > 0)
@@ -168,12 +211,52 @@ namespace monitor_queues
             var filteredQueueInfos = !config.ShowEmptyQueues ? queueInfos.Where(q => q.Value.FirstCount != 0 || q.Value.CurrentCount != 0)
                                                              : queueInfos;
 
-            var orderedQueueInfos = config.OrderByQueueSize ? filteredQueueInfos.OrderByDescending(q => q.Value.CurrentCount)
-                                                                                .ThenBy(q => q.Key)
-                                                            : filteredQueueInfos.OrderBy(q => q.Key);
+            IOrderedEnumerable<KeyValuePair<string, QueueInfo>> orderedQueueInfos;
+            if (config.GroupQueues)
+            {
+                orderedQueueInfos = filteredQueueInfos.OrderBy(q => q.Value.GroupOrder)
+                                                      .ThenBy(q => q.Value.GroupName);
+                if (config.OrderByQueueSize)
+                {
+                    orderedQueueInfos = orderedQueueInfos.ThenByDescending(q => q.Value.CurrentCount);
+                }
+                orderedQueueInfos = orderedQueueInfos.ThenBy(q => q.Key);
+            }
+            else
+            {
+                if (config.OrderByQueueSize)
+                {
+                    orderedQueueInfos = filteredQueueInfos.OrderByDescending(q => q.Value.CurrentCount)
+                                                          .ThenBy(q => q.Key);
+                }
+                else
+                {
+                    orderedQueueInfos = filteredQueueInfos.OrderBy(q => q.Key);
+                }
+            }
+
+
+            string previousGroupName = "";
+            bool isFirstGroup = true;
 
             foreach (string queue in orderedQueueInfos.Select(q => q.Key))
             {
+                if (queueInfos[queue].GroupName != previousGroupName)
+                {
+                    if (!isFirstGroup)
+                    {
+                        //"{0,58}  {1,8}  {2,6}  {3,14}  {4,15}"
+                        _console.ColoredWriteLine(BLACK_WHITE, new string('\u00A0', 58)
+                                                             , new string('\u00A0', 8)
+                                                             , new string('\u00A0', 6)
+                                                             , new string('\u00A0', 14)
+                                                             , new string('\u00A0', 15));
+                    }
+                    _console.ColoredWriteLine(BLACK_WHITE, queueInfos[queue].GroupName.ToUpper(), "", "", "", "");
+                    previousGroupName = queueInfos[queue].GroupName;
+                    isFirstGroup = false;
+                }
+
                 if (queueInfos[queue].IsImportant && queueInfos[queue].IncreasedCount)
                 {
                     colorPattern = DARKRED_WHITE;

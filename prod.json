@@ -1,0 +1,92 @@
+﻿{
+  "Title": "Gestão de Pátio - Produção",
+  "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=sagpatioprod;AccountKey=OodqkGEBYKTmJBlne6OhohkL1FBmfgRB2vDhnRMmjH90IRPoLV9B6gLYki9JwdTeojXhW97HHgUAxVwt42h8Fw==;BlobEndpoint=https://sagpatioprod.blob.core.windows.net/;QueueEndpoint=https://sagpatioprod.queue.core.windows.net/;TableEndpoint=https://sagpatioprod.table.core.windows.net/;FileEndpoint=https://sagpatioprod.file.core.windows.net/;",
+  "ShowEmptyQueues": false,
+  "OrderByQueueSize": false,
+  "ExportCountData": true,
+  "PollingInterval": 0,
+  "ExportPath": "d:\\",
+  "IgnoredQueues": [
+  ],
+  "ImportantQueues": [
+    "-poison"
+  ],
+  "GroupQueues": true,
+  "QueueGroups": [
+    {
+      "GroupName": "Auditoria",
+      "Queues": [
+        "auth-audit-entries",
+        "integration-sap-ressincronizar-status"
+      ],
+      "Order": 99
+    },
+    {
+      "GroupName": "Fluxo de Marcações",
+      "Queues": [
+        "carregamento-marcacao-cadastrada",
+        "carregamento-marcacao-criada",
+        "carregamento-update-status-portaria",
+        "integration-sap-associar-marcacao",
+        "integration-sap-associar-motorista-regioes",
+        "integration-sap-cancelar-assoc-marcacao",
+        "integration-sap-cancelar-marcacao",
+        "integration-sap-cancelar-portaria",
+        "integration-sap-cancelar-pre-reserva",
+        "integration-sap-confirmar-pre-reserva",
+        "integration-sap-retorno-associar-marcacao",
+        "integration-sap-retorno-cancel-assoc",
+        "integration-sap-update-status-portaria",
+        "integration-sap-update-status-portaria-envio",
+        "mark-enviar-marcacao-sap",
+        "mark-integrar-trsnet",
+        "mark-retorno-associar-marcacao",
+        "mark-atualizar-data-chamado"
+      ],
+      "Order": 0
+    },
+    {
+      "GroupName": "Integração de Dados Mestres",
+      "Queues": [
+        "integration-sap-payload-operation",
+        "integration-sap-payload-operation-cifretira",
+        "integration-sap-payload-operation-cifretirapermanente",
+        "integration-sap-payload-operation-clientevip",
+        "integration-sap-payload-operation-itinerario",
+        "integration-sap-payload-operation-motorista",
+        "integration-sap-payload-operation-motoristaregiao",
+        "integration-sap-payload-operation-paleteproduto",
+        "integration-sap-payload-operation-pedido",
+        "integration-sap-payload-operation-pontocarregamento",
+        "integration-sap-payload-operation-produto",
+        "integration-sap-payload-operation-regiao",
+        "integration-sap-payload-operation-tipoveiculo",
+        "integration-sap-payload-operation-transportadora",
+        "integration-sap-payload-operation-unidadenegocio",
+        "integration-sap-payload-operation-veiculo",
+        "integration-sap-payload-operation-zonatransporte",
+        "mark-pedido-int-completo",
+        "mark-veiculo-categoria-post",
+        "mark-veiculo-categoria-put",
+        "registration-businessunits-int-post",
+        "registration-itinerario-int-post",
+        "registration-itinerario-int-put",
+        "registration-motorista-int-completo",
+        "registration-motorista-treinamento",
+        "registration-pedido-int-completo",
+        "registration-produto-int-post",
+        "registration-regiao-int-post",
+        "registration-regiao-int-put",
+        "registration-unidadenegocio-int-post",
+        "registration-unidadenegocio-int-put",
+        "registration-veiculo-int-laudos",
+        "registration-veiculo-int-post",
+        "registration-veiculo-int-put",
+        "registration-veiculo-int-transportadoras",
+        "mark-metatransferencia-faturada",
+        "mark-metatransferencia-faturada-poison"
+          ],
+      "Order": 1
+    }
+  ]
+}
